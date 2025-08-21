@@ -2,7 +2,7 @@ class O2l < Formula
     desc "O²L Programming Language - Modern object-oriented language with everything-is-an-object design"
     homepage "https://github.com/zombocoder/o2l"
     url "https://github.com/zombocoder/o2l/archive/refs/tags/v0.0.1.tar.gz"
-    sha256 "" # This will be calculated automatically when you upload the formula
+    sha256 "1aa75e1982bd247768cb5c11f2f6cce85707bfd6c55d576450c291e81b7716de"
     license "Apache-2.0"
   
     depends_on "cmake" => :build
@@ -16,11 +16,14 @@ class O2l < Formula
     
     def install
       # Set up build environment for C++23
-      ENV.cxx23
+      ENV["CXXFLAGS"] = "-std=c++23"
+      ENV["CPPFLAGS"] = "-I#{Formula["libffi"].opt_include}"
+      ENV["LDFLAGS"] = "-L#{Formula["libffi"].opt_lib}"
       
       # Configure with CMake
       system "cmake", "-B", "build",
                       "-DCMAKE_BUILD_TYPE=Release",
+                      "-DCMAKE_CXX_STANDARD=23",
                       "-DCMAKE_OSX_DEPLOYMENT_TARGET=12.0",
                       "-GNinja",
                       *std_cmake_args
@@ -75,5 +78,18 @@ class O2l < Formula
     test do
       # Basic functionality test
       system "#{bin}/o2l", "--version"
+      
+      # Test with a simple O²L program
+      (testpath/"test.obq").write <<~EOS
+        Object TestProgram {
+            @external method main(): Void {
+                System.println("O²L Homebrew installation successful!")
+            }
+        }
+      EOS
+      
+      # Run the test program
+      output = shell_output("#{bin}/o2l run test.obq")
+      assert_match "O²L Homebrew installation successful!", output
     end
   end
